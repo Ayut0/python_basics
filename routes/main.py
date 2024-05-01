@@ -20,12 +20,18 @@ def read_root():
 # def read_item(item_id: int, q:Union[str, None] = None):
 #     return {"item_id":item_id, "q":q}
 
-@app.get("/items/{item_id}")
-def get_item(item_id: int) -> str:
+@app.get("/items/{item_id}", response_model=Item)
+def get_item(item_id: int) -> Item:
     if item_id < len(items):
         return items[item_id]
     else:
-        raise HTTPException(status_code=404, detail="Items not found")
+        raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
+    
+
+@app.post("/items")
+def create_item(item:Item):
+    items.append(item)
+    return items
 
 @app.put("/items/{item_id}")
 def update_item(item_id: int, item: Item):
