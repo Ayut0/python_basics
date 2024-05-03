@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, Path
+from fastapi import FastAPI, HTTPException, Query, Path, Body
 from typing import Union, Annotated
 from pydantic import BaseModel
 from enum import Enum
@@ -9,7 +9,12 @@ app = FastAPI()
 class Item(BaseModel):
     name: str
     price: float
-    is_offer: Union[bool, None] = None
+    description: str | None = None
+    tax: float | None = None
+
+class User(BaseModel):
+    username:str
+    full_name: str | None = None
 
 class ModelName(str, Enum):
     alexnet="alexnet"
@@ -85,7 +90,13 @@ def create_item(item:Item):
     items.append(item)
     return items
 
-@app.put("/items/{item_id}")
-def update_item(item_id: int, item: Item):
-    return {"item_name" : item.name, "item_id": item_id }
+# @app.put("/items/{item_id}")
+# def update_item(item_id: int, item: Item, user: User, importance: Annotated[int, Body()]):
+#     results = {"item_id": item_id, "item": item, "user": user}
+#     return results
 
+# Embed a single body parameter
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Annotated[Item, Body(embed=True)]):
+    results = {"item_id": item_id, "item": item}
+    return results
