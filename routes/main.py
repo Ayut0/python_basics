@@ -1,5 +1,5 @@
-from fastapi import FastAPI, HTTPException
-from typing import Union
+from fastapi import FastAPI, HTTPException, Query
+from typing import Union, Annotated
 from pydantic import BaseModel
 from enum import Enum
 
@@ -26,12 +26,26 @@ def read_root():
 
 # query params
 # http://127.0.0.1:8000/items/?skip=0&limit=10
-@app.get("/items")
-async def read_item(skip: int = 0, limit: int=10):
-    return fake_items_db[skip: skip + limit]
+# @app.get("/items")
+# async def read_item(skip: int = 0, limit: int=10):
+#     return fake_items_db[skip: skip + limit]
+
+@app.get("/items/")
+async def read_item(q: Annotated[str, Query(title="Query string", description="The description allows us to put an explanation about a query", min_length= 3, deprecated=True)]):
+    results = {"items" : [{"item_id" : "Foo"}, {"item_id" : "Bar"}]}
+    if q:
+        results.update({"q": q})
+
+    return results
+
+# http://localhost:8000/items/?q=foo&q=bar
+# @app.get("/items/")
+# async def read_items(q: Annotated[list[str] | None, Query()] = None):
+#     query_items = {"q": q}
+#     return query_items
 
 @app.get("/items/{item_id}")
-async def read_item(item_id:str, q: str | None = None, short: bool = False):
+async def read_item(item_id: Annotated[str, "This is a metadata"], q: str | None = None, short: bool = False):
     item = {"item_id": item_id}
     if q:
         item.update({"q":q})
