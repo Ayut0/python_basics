@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query, Path, Body
 from typing import Union, Annotated
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum
 
 
@@ -8,8 +8,10 @@ app = FastAPI()
 
 class Item(BaseModel):
     name: str
-    price: float
-    description: str | None = None
+    price: float = Field(..., gt=0, description="The price must be greater than zero")
+    description: str | None = Field(
+        default = None, title = "The description of the item", max_length=300
+    )
     tax: float | None = None
 
 class User(BaseModel):
