@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Path
 from typing import Union, Annotated
 from pydantic import BaseModel
 from enum import Enum
@@ -54,7 +54,7 @@ async def read_item(item_id: Annotated[str, "This is a metadata"], q: str | None
     return item
 
 @app.get("/users/{user_id}/items/{item_id}")
-async def read_user_item(user_id: int, item_id: str, q: str | None = None, short: bool = False):
+async def read_user_item(user_id: Annotated[int, Path(title='The ID of the user to get', ge=1)], item_id: str, q: str | None = None, short: bool = False):
     item = {"item_id": item_id, "owner_id" : user_id}
 
     if q:
