@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, Path, Body
+from fastapi import FastAPI, HTTPException, Query, Path, Body, Cookie, Header
 from typing import Union, Annotated, List
 from pydantic import BaseModel, Field, HttpUrl
 from enum import Enum
@@ -61,13 +61,19 @@ def read_root():
 # async def read_item(skip: int = 0, limit: int=10):
 #     return fake_items_db[skip: skip + limit]
 
-@app.get("/items/")
-async def read_item(q: Annotated[str, Query(title="Query string", description="The description allows us to put an explanation about a query", min_length= 3, deprecated=True)]):
-    results = {"items" : [{"item_id" : "Foo"}, {"item_id" : "Bar"}]}
-    if q:
-        results.update({"q": q})
+# Annotated
+# @app.get("/items/")
+# async def read_item(q: Annotated[str, Query(title="Query string", description="The description allows us to put an explanation about a query", min_length= 3, deprecated=True)]):
+#     results = {"items" : [{"item_id" : "Foo"}, {"item_id" : "Bar"}]}
+#     if q:
+#         results.update({"q": q})
 
-    return results
+#     return results
+
+# cookie
+@app.get("/items/")
+async def read_items(ads_id: Annotated[str | None, Cookie()] = None):
+    return {"ads_id": ads_id}
 
 # http://localhost:8000/items/?q=foo&q=bar
 # @app.get("/items/")
