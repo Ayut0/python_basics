@@ -19,6 +19,19 @@ class Item(BaseModel):
     tags: set[str] = []
     image: list[Image] | None = None
 
+    model_config = {
+        "json_schema_extra": {
+            "examples" : [
+                {
+                    "name": "Foo",
+                    "price": 35.4,
+                    "description": "A very nice item",
+                    "tax": 3.2,
+                }
+            ]
+        }
+    }
+
 class Offer(BaseModel):
     name: str
     description: str | None = None
@@ -110,7 +123,36 @@ def create_item(item:Item):
 
 # Embed a single body parameter
 @app.put("/items/{item_id}")
-async def update_item(item_id: int, item: Annotated[Item, Body(embed=True)]):
+async def update_item(item_id: int, item: Annotated[Item, Body(
+    openapi_examples={
+        "normal":{
+            "summary": "A normal example",
+            "description": "A normal description",
+            "value":{
+                "name": "Foo",
+                "price": 35.4,
+                "tax" : 3.2,
+                "description": "A very nice item"
+            },
+        },
+        "converted": {
+            "summary" : "An example with converted data",
+            "description": "FastAPI can covert price `settings to actual `number` automatically",
+            "value":{
+                "name": "Bar",
+                "price": "35.4",
+            },
+        },
+        "invalid" :{
+            "summary": "An example with invalid data",
+            "description": "FastAPI will return an error if the price is less than or equal to zero",
+            "value":{
+                "name": "Baz",
+                "price": 0,
+            },
+        },
+    }
+)]):
     results = {"item_id": item_id, "item": item}
     return results
 
