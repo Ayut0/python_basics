@@ -48,7 +48,12 @@ class ModelName(str, Enum):
     resnet="resnet"
     lenet="lenet"
 
+class CarItem(BaseModel):
+    type: str = "car"
 
+class PlaneItem(BaseModel):
+    type: str = "plane"
+    size: int
 
 class BaseUser(BaseModel):
     username:str
@@ -75,7 +80,14 @@ def fake_save_user(user_input: UserInput):
     print("User saved! .. not really")
     return user_in_db
 
-items = []
+items = {
+    "item1": {"description": "All my friends drive a low rider", "type": "car"},
+    "item2": {
+        "description": "Music is my aeroplane, it's my aeroplane",
+        "type": "plane",
+        "size": 5,
+    },
+}
 fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
 
 # If you declare a response model, FastAPI will use it to validate the response data
@@ -126,14 +138,19 @@ async def read_items(user_agent: Annotated[str | None, Header()] = None):
 #     query_items = {"q": q}
 #     return query_items
 
-@app.get("/items/{item_id}")
-async def read_item(item_id: Annotated[str, "This is a metadata"], q: str | None = None, short: bool = False):
-    item = {"item_id": item_id}
-    if q:
-        item.update({"q":q})
-    if not short:
-        item.update({"description" : "This is an amazing item that has a long description"})
-    return item
+# @app.get("/items/{item_id}")
+# async def read_item(item_id: Annotated[str, "This is a metadata"], q: str | None = None, short: bool = False):
+#     item = {"item_id": item_id}
+#     if q:
+#         item.update({"q":q})
+#     if not short:
+#         item.update({"description" : "This is an amazing item that has a long description"})
+#     return item
+
+# Union
+@app.get("/items/{item_id}", response_model=Union[PlaneItem, CarItem])
+async def read_item(item_id : str):
+    return items[item_id]
 
 @app.get("/users/{user_id}/items/{item_id}")
 async def read_user_item(user_id: Annotated[int, Path(title='The ID of the user to get', ge=1)], item_id: str, q: str | None = None, short: bool = False):
