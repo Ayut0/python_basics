@@ -71,9 +71,14 @@ def read_root():
 #     return results
 
 # cookie
+# @app.get("/items/")
+# async def read_items(ads_id: Annotated[str | None, Cookie()] = None):
+#     return {"ads_id": ads_id}
+
+# Header
 @app.get("/items/")
-async def read_items(ads_id: Annotated[str | None, Cookie()] = None):
-    return {"ads_id": ads_id}
+async def read_items(user_agent: Annotated[str | None, Header()] = None):
+    return {"User-Agent": user_agent}
 
 # http://localhost:8000/items/?q=foo&q=bar
 # @app.get("/items/")
