@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, Path, Body, Cookie, Header, Response
+from fastapi import FastAPI, HTTPException, Query, Path, Body, Cookie, Header, Response, status
 from typing import Any, Union, Annotated, List
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field, HttpUrl, EmailStr
@@ -92,7 +92,10 @@ fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"
 
 # If you declare a response model, FastAPI will use it to validate the response data
 # In other words, FastAPI prioritizes the response model over the return type annotation
-@app.post("/users/", response_model=UserOutput)
+
+# When you set a status code, you don't need to remember what each code means
+# FastAPI provide a status code from the status module
+@app.post("/users/", response_model=UserOutput, status_code=status.HTTP_201_CREATED)
 async def create_user(user_input: UserInput):
     user_saved = fake_save_user(user_input)
     return user_saved
