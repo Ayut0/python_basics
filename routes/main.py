@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException, Query, Path, Body, Cookie, Header
-from typing import Union, Annotated, List
-from pydantic import BaseModel, Field, HttpUrl
+from fastapi import FastAPI, HTTPException, Query, Path, Body, Cookie, Header, Response
+from typing import Any, Union, Annotated, List
+from fastapi.responses import JSONResponse, RedirectResponse
+from pydantic import BaseModel, Field, HttpUrl, EmailStr
 from enum import Enum
 
 
@@ -47,9 +48,35 @@ class ModelName(str, Enum):
     resnet="resnet"
     lenet="lenet"
 
+class BaseUser(BaseModel):
+    username:str
+    email: EmailStr
+    full_name: str | None = None
+
+# Make sure not to user the same response to multiple endpoints
+# UserInput inherits from BaseUser
+class UserInput(BaseUser):
+    password: str
+
+class UserOutput(BaseModel):
+    username: str
+    email: str
+    full_name: str | None = None
 
 items = []
 fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
+
+# If you declare a response model, FastAPI will use it to validate the response data
+# In other words, FastAPI prioritizes the response model over the return type annotation
+@app.post("/users/")
+async def create_user(user: UserInput) -> BaseUser:
+    return user
+
+@app.get("/portal")
+async def get_portal(teleport: bool = False) -> Response:
+    if teleport:
+        return RedirectResponse(url="https://fastapi.tiangolo.com")
+    return JSONResponse(content={"message": "Hello World"})
 
 @app.get("/")
 def read_root():
@@ -123,7 +150,7 @@ async def get_model(model_name: ModelName):
 
 
 @app.post("/items")
-def create_item(item:Item):
+def create_item(item:Item) -> Item:
     items.append(item)
     return items
 
