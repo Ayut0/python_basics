@@ -48,6 +48,8 @@ class ModelName(str, Enum):
     resnet="resnet"
     lenet="lenet"
 
+
+
 class BaseUser(BaseModel):
     username:str
     email: EmailStr
@@ -59,18 +61,29 @@ class UserInput(BaseUser):
     password: str
 
 class UserOutput(BaseModel):
-    username: str
-    email: str
-    full_name: str | None = None
+    pass
+
+class UserInDB(BaseUser):
+    hashed_password: str
+
+def fake_hash_password(raw_password: UserInput):
+    return "supersecret" + raw_password
+
+def fake_save_user(user_input: UserInput):
+    hashed_password = fake_hash_password(user_input.password)
+    user_in_db = UserInDB(**user_input.dict(), hashed_password=hashed_password)
+    print("User saved! .. not really")
+    return user_in_db
 
 items = []
 fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
 
 # If you declare a response model, FastAPI will use it to validate the response data
 # In other words, FastAPI prioritizes the response model over the return type annotation
-@app.post("/users/")
-async def create_user(user: UserInput) -> BaseUser:
-    return user
+@app.post("/users/", response_model=UserOutput)
+async def create_user(user_input: UserInput):
+    user_saved = fake_save_user(user_input)
+    return user_saved
 
 @app.get("/portal")
 async def get_portal(teleport: bool = False) -> Response:
