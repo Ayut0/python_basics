@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, Path, Body, Cookie, Header, Response, status, Form
+from fastapi import FastAPI, HTTPException, Query, Path, Body, Cookie, Header, Response, status, Form, File, UploadFile
 from typing import Any, Union, Annotated, List
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field, HttpUrl, EmailStr
@@ -238,3 +238,19 @@ async def create_offer(offer: Offer):
 @app.post("/images/multiple")
 async def create_multiple_images(images: list[Image]):
     return images
+
+@app.post("/files/")
+async def create_file(
+    file: Annotated[bytes, File()],
+    fileb: Annotated[UploadFile, File()],
+    token: Annotated[str, Form()]
+):
+    return {
+        "file size": len(file),
+        "token": token,
+        "file_content_type": fileb.content_type
+    }
+
+@app.post("/uploadfile/")
+async def create_uoload_file(file: UploadFile | None = None):
+    return {"filename" : file.filename}
