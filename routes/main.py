@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Query, Path, Body, Cookie, Header, R
 from typing import Any, Union, Annotated, List
 from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field, HttpUrl, EmailStr
 from enum import Enum
 from starlette.exceptions import HTTPException as StraletteValidationError
@@ -99,8 +100,11 @@ items = {
 fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
 
 @app.exception_handler(StraletteValidationError)
-async def http_exception_handler(request, exc):
-    return PlainTextResponse(str(exc.detail), status_code=exc.status_code)
+async def http_exception_handler(request : Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=jsonable_encoder({"detail": exc.errors(), "body": exc.body})
+    )
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
