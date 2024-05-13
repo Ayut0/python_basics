@@ -10,6 +10,14 @@ from starlette.exceptions import HTTPException as StraletteValidationError
 
 app = FastAPI()
 
+class Tags(Enum):
+    items = "Items",
+    auth = "Auth",
+    users = "Users",
+    models = "Models"
+    offers = "Offers",
+    files = "Files",
+
 class Image (BaseModel):
     url: HttpUrl
     name: str
@@ -128,12 +136,12 @@ async def read_unicorn(name: str):
 
 # When you set a status code, you don't need to remember what each code means
 # FastAPI provide a status code from the status module
-@app.post("/users/", response_model=UserOutput, status_code=status.HTTP_201_CREATED)
+@app.post("/users/", response_model=UserOutput, status_code=status.HTTP_201_CREATED, tags=[Tags.users])
 async def create_user(user_input: UserInput):
     user_saved = fake_save_user(user_input)
     return user_saved
 
-@app.post("/login/")
+@app.post("/login/", tags=[Tags.auth], response_description="The user's name")
 async def login(username: Annotated[str, Form()], password: Annotated[str, Form()]):
     return {"username": username}
 
@@ -168,7 +176,7 @@ def read_root():
 #     return {"ads_id": ads_id}
 
 # Header
-@app.get("/items/")
+@app.get("/items/", tags=[Tags.items])
 async def read_items(user_agent: Annotated[str | None, Header()] = None):
     return {"User-Agent": user_agent}
 
@@ -192,13 +200,13 @@ async def read_items(user_agent: Annotated[str | None, Header()] = None):
 # async def read_item(item_id : str):
 #     return items[item_id]
 
-@app.get("/items/{item_id}")
+@app.get("/items/{item_id}", tags=[Tags.items])
 async def read_item(item_id: int):
     if item_id == 3:
         raise HTTPException(status_code=418, detail="Nope! I don't like 3.")
     return { "item_id" : item_id }
 
-@app.get("/users/{user_id}/items/{item_id}")
+@app.get("/users/{user_id}/items/{item_id}", tags=[Tags.users])
 async def read_user_item(user_id: Annotated[int, Path(title='The ID of the user to get', ge=1)], item_id: str, q: str | None = None, short: bool = False):
     item = {"item_id": item_id, "owner_id" : user_id}
 
@@ -214,7 +222,7 @@ async def read_user_item(user_id: Annotated[int, Path(title='The ID of the user 
 #     else:
 #         raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
 
-@app.get("/models/{model_name}")
+@app.get("/models/{model_name}", tags=[Tags.models])
 async def get_model(model_name: ModelName):
     if model_name is ModelName.alexnet:
         return {"model_name": model_name, "message": "Deep Learning FTW!"}
@@ -225,7 +233,7 @@ async def get_model(model_name: ModelName):
     return {"model_name": model_name, "message": "Have some residuals"}
 
 
-@app.post("/items")
+@app.post("/items", tags=[Tags.items], deprecated=True)
 def create_item(item:Item) -> Item:
     items.append(item)
     return items
@@ -236,7 +244,7 @@ def create_item(item:Item) -> Item:
 #     return results
 
 # Embed a single body parameter
-@app.put("/items/{item_id}")
+@app.put("/items/{item_id}", tags=[Tags.items])
 async def update_item(item_id: int, item: Annotated[Item, Body(
     openapi_examples={
         "normal":{
@@ -270,15 +278,18 @@ async def update_item(item_id: int, item: Annotated[Item, Body(
     results = {"item_id": item_id, "item": item}
     return results
 
-@app.post("/offers/")
+@app.post("/offers/", tags=[Tags.offers])
 async def create_offer(offer: Offer):
+    """
+    - You can create an offer
+    """
     return offer
 
-@app.post("/images/multiple")
+@app.post("/images/multiple", tags=[Tags.files])
 async def create_multiple_images(images: list[Image]):
     return images
 
-@app.post("/files/")
+@app.post("/files/", tags=[Tags.files])
 async def create_file(
     file: Annotated[bytes, File()],
     fileb: Annotated[UploadFile, File()],
@@ -290,11 +301,11 @@ async def create_file(
         "file_content_type": fileb.content_type
     }
 
-@app.post("/uploadfile/")
+@app.post("/uploadfile/", tags=[Tags.files], summary="Upload a file", description="You can upload a file")
 async def create_uoload_file(file: UploadFile | None = None):
     return {"filename" : file.filename}
 
-@app.get("/items-header/{item_id}")
+@app.get("/items-header/{item_id}", tags=[Tags.items])
 async def read_item_header(item_id:str):
     if item_id not in items:
         raise HTTPException(
