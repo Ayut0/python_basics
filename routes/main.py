@@ -240,8 +240,16 @@ async def create_multiple_images(images: list[Image]):
     return images
 
 @app.post("/files/")
-async def create_file(files: Annotated[list[bytes] | None, File()] = None):
-    return {"File size": [len(file) for file in files]}
+async def create_file(
+    file: Annotated[bytes, File()],
+    fileb: Annotated[UploadFile, File()],
+    token: Annotated[str, Form()]
+):
+    return {
+        "file size": len(file),
+        "token": token,
+        "file_content_type": fileb.content_type
+    }
 
 @app.post("/uploadfile/")
 async def create_uoload_file(file: UploadFile | None = None):
