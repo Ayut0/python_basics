@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, Path, Body, Cookie, Header, Response, status
+from fastapi import FastAPI, HTTPException, Query, Path, Body, Cookie, Header, Response, status, Form
 from typing import Any, Union, Annotated, List
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field, HttpUrl, EmailStr
@@ -99,6 +99,10 @@ fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"
 async def create_user(user_input: UserInput):
     user_saved = fake_save_user(user_input)
     return user_saved
+
+@app.post("/login/")
+async def login(username: Annotated[str, Form()], password: Annotated[str, Form()]):
+    return {"username": username}
 
 @app.get("/portal")
 async def get_portal(teleport: bool = False) -> Response:
