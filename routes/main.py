@@ -141,7 +141,7 @@ async def create_user(user_input: UserInput):
     user_saved = fake_save_user(user_input)
     return user_saved
 
-@app.post("/login/", tags=[Tags.auth])
+@app.post("/login/", tags=[Tags.auth], response_description="The user's name")
 async def login(username: Annotated[str, Form()], password: Annotated[str, Form()]):
     return {"username": username}
 
@@ -233,7 +233,7 @@ async def get_model(model_name: ModelName):
     return {"model_name": model_name, "message": "Have some residuals"}
 
 
-@app.post("/items", tags=[Tags.items])
+@app.post("/items", tags=[Tags.items], deprecated=True)
 def create_item(item:Item) -> Item:
     items.append(item)
     return items
@@ -280,6 +280,9 @@ async def update_item(item_id: int, item: Annotated[Item, Body(
 
 @app.post("/offers/", tags=[Tags.offers])
 async def create_offer(offer: Offer):
+    """
+    - You can create an offer
+    """
     return offer
 
 @app.post("/images/multiple", tags=[Tags.files])
@@ -298,7 +301,7 @@ async def create_file(
         "file_content_type": fileb.content_type
     }
 
-@app.post("/uploadfile/", tags=[Tags.files])
+@app.post("/uploadfile/", tags=[Tags.files], summary="Upload a file", description="You can upload a file")
 async def create_uoload_file(file: UploadFile | None = None):
     return {"filename" : file.filename}
 
