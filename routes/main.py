@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException, Query, Path, Body, Cookie, Header
-from typing import Union, Annotated, List
-from pydantic import BaseModel, Field, HttpUrl
+from fastapi import FastAPI, HTTPException, Query, Path, Body, Cookie, Header, Response, status, Form
+from typing import Any, Union, Annotated, List
+from fastapi.responses import JSONResponse, RedirectResponse
+from pydantic import BaseModel, Field, HttpUrl, EmailStr
 from enum import Enum
 
 
@@ -47,9 +48,67 @@ class ModelName(str, Enum):
     resnet="resnet"
     lenet="lenet"
 
+class CarItem(BaseModel):
+    type: str = "car"
 
-items = []
+class PlaneItem(BaseModel):
+    type: str = "plane"
+    size: int
+
+class BaseUser(BaseModel):
+    username:str
+    email: EmailStr
+    full_name: str | None = None
+
+# Make sure not to user the same response to multiple endpoints
+# UserInput inherits from BaseUser
+class UserInput(BaseUser):
+    password: str
+
+class UserOutput(BaseModel):
+    pass
+
+class UserInDB(BaseUser):
+    hashed_password: str
+
+def fake_hash_password(raw_password: UserInput):
+    return "supersecret" + raw_password
+
+def fake_save_user(user_input: UserInput):
+    hashed_password = fake_hash_password(user_input.password)
+    user_in_db = UserInDB(**user_input.dict(), hashed_password=hashed_password)
+    print("User saved! .. not really")
+    return user_in_db
+
+items = {
+    "item1": {"description": "All my friends drive a low rider", "type": "car"},
+    "item2": {
+        "description": "Music is my aeroplane, it's my aeroplane",
+        "type": "plane",
+        "size": 5,
+    },
+}
 fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
+
+# If you declare a response model, FastAPI will use it to validate the response data
+# In other words, FastAPI prioritizes the response model over the return type annotation
+
+# When you set a status code, you don't need to remember what each code means
+# FastAPI provide a status code from the status module
+@app.post("/users/", response_model=UserOutput, status_code=status.HTTP_201_CREATED)
+async def create_user(user_input: UserInput):
+    user_saved = fake_save_user(user_input)
+    return user_saved
+
+@app.post("/login/")
+async def login(username: Annotated[str, Form()], password: Annotated[str, Form()]):
+    return {"username": username}
+
+@app.get("/portal")
+async def get_portal(teleport: bool = False) -> Response:
+    if teleport:
+        return RedirectResponse(url="https://fastapi.tiangolo.com")
+    return JSONResponse(content={"message": "Hello World"})
 
 @app.get("/")
 def read_root():
@@ -86,14 +145,19 @@ async def read_items(user_agent: Annotated[str | None, Header()] = None):
 #     query_items = {"q": q}
 #     return query_items
 
-@app.get("/items/{item_id}")
-async def read_item(item_id: Annotated[str, "This is a metadata"], q: str | None = None, short: bool = False):
-    item = {"item_id": item_id}
-    if q:
-        item.update({"q":q})
-    if not short:
-        item.update({"description" : "This is an amazing item that has a long description"})
-    return item
+# @app.get("/items/{item_id}")
+# async def read_item(item_id: Annotated[str, "This is a metadata"], q: str | None = None, short: bool = False):
+#     item = {"item_id": item_id}
+#     if q:
+#         item.update({"q":q})
+#     if not short:
+#         item.update({"description" : "This is an amazing item that has a long description"})
+#     return item
+
+# Union
+@app.get("/items/{item_id}", response_model=Union[PlaneItem, CarItem])
+async def read_item(item_id : str):
+    return items[item_id]
 
 @app.get("/users/{user_id}/items/{item_id}")
 async def read_user_item(user_id: Annotated[int, Path(title='The ID of the user to get', ge=1)], item_id: str, q: str | None = None, short: bool = False):
@@ -123,7 +187,7 @@ async def get_model(model_name: ModelName):
 
 
 @app.post("/items")
-def create_item(item:Item):
+def create_item(item:Item) -> Item:
     items.append(item)
     return items
 
