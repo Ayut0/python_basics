@@ -1,14 +1,18 @@
 from datetime import timedelta, timezone, datetime
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Annotated
 from pydantic import BaseModel
+import time
 
 import jwt
 from passlib.context import CryptContext
 from jwt.exceptions import InvalidTokenError
+from fastapi.middleware.cors import CORSMiddleware
 
-SECRET_KEY = '5fbf5cd4ec76717a187fee7d28f954b078ee95bece4ab88c6b21dfcf04211e2b'
+# to get a string like this run:
+# openssl rand -hex 32
+SECRET_KEY = ''
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -21,6 +25,13 @@ fake_users_db = {
         "disabled": False,
     }
 }
+
+origins = [
+     "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8080",
+]
 
 
 class Token(BaseModel):
@@ -106,6 +117,23 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.middleware("http")
+async def add_process_time_header(request:Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
 
 
 @app.get("/user/me")
