@@ -2,6 +2,8 @@ from .database import Base
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
+# database models
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -12,7 +14,7 @@ class User(Base):
     is_active = Column(Boolean, default= True)
 
     items = relationship("Item", back_populates="owner")
-    
+
 class Item(Base):
     __tablename__ = 'items'
 
