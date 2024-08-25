@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
@@ -17,6 +17,16 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def write_notification(email:str, message=""):
+    with open("log.txt", mode="w") as email_file:
+        content = f"notification for {email}: {message}"
+        email_file.write(content)
+
+@app.post("/send-notification/{email}")
+async def send_notification(email:str, backgroundTasks: BackgroundTasks):
+    backgroundTasks.add_task(write_notification, email, message="some notification")
+    return {"message": "Notification sent in the background"}
 
 @app.post("/users/", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
